@@ -18,7 +18,10 @@ const rbacHandle: Handle = async ({ event, resolve }) => {
 	// Proteksi Rute Customer Service (CS)
 	if (pathname.startsWith('/cs')) {
 		if (!session || (session.user as any).role !== 'CUSTOMER_SERVICE') {
-			return new Response('Redirect', { status: 303, headers: { Location: '/login' } });
+			// Perbolehkan CS melihat data admin tertentu jika diizinkan, tapi saat ini ketat
+			if ((session?.user as any).role !== 'ADMIN') {
+				return new Response('Redirect', { status: 303, headers: { Location: '/login' } });
+			}
 		}
 	}
 
@@ -41,11 +44,5 @@ const rbacHandle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-/* 
-// Autentikasi dinonaktifkan sementara untuk pengecekan Front-End sesuai permintaan user
+// Aktifkan kembali keamanan penuh (Auth + RBAC)
 export const handle = sequence(authHandle, rbacHandle);
-*/
-
-export const handle: Handle = async ({ event, resolve }) => {
-	return resolve(event);
-};

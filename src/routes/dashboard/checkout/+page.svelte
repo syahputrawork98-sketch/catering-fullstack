@@ -1,3 +1,4 @@
+<script lang="ts">
 	import { cart } from '$lib/stores/cartStore.svelte';
 	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';

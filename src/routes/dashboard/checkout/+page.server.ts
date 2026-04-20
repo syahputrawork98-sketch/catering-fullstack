@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
-import { orders, orderItems } from '$lib/server/db/schema';
-import { error, fail, redirect } from '@sveltejs/kit';
+import { orders, orderItems, dailySchedules } from '$lib/server/db/schema';
+import { error, fail } from '@sveltejs/kit';
+import { eq, and, sql } from 'drizzle-orm';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -19,18 +20,57 @@ export const actions: Actions = {
 		}
 
 		const cartItems = JSON.parse(cartJson);
+		if (cartItems.length === 0) {
+			return fail(400, { message: 'Keranjang belanja kosong' });
+		}
+
+		// Grouping Strategy: For this implementation, we take the delivery date from the first item
+		// to set the overall order's delivery date.
+		const mainDeliveryDate = cartItems[0].deliveryDate;
 
 		try {
-			// Jalankan Transaksi Database secara Atomik
+			// Atomic Transaction: All or Nothing
 			const result = await db.transaction(async (tx) => {
-				// 1. Buat Header Pesanan (Order)
+				
+				// 1. Stock Verification and Decrement Loop
+				for (const item of cartItems) {
+					// Find the specific schedule entry
+					const [schedule] = await tx
+						.select()
+						.from(dailySchedules)
+						.where(
+							and(
+								eq(dailySchedules.menuId, item.id),
+								eq(dailySchedules.availableDate, item.deliveryDate)
+							)
+						);
+
+					if (!schedule) {
+						throw new Error(`Menu "${item.name}" tidak tersedia untuk tanggal tersebut.`);
+					}
+
+					if (schedule.currentStock < item.quantity) {
+						throw new Error(`Stok "${item.name}" tidak cukup. Sisa: ${schedule.currentStock}`);
+					}
+
+					// 2. Atomic Decrement
+					await tx
+						.update(dailySchedules)
+						.set({
+							currentStock: sql`${dailySchedules.currentStock} - ${item.quantity}`
+						})
+						.where(eq(dailySchedules.id, schedule.id));
+				}
+
+				// 3. Create Order Master record
 				const [newOrder] = await tx.insert(orders).values({
 					userId: session.user.id,
 					grandTotal: grandTotal,
+					deliveryDate: mainDeliveryDate,
 					status: 'PENDING'
 				}).returning();
 
-				// 2. Buat Detail Pesanan (Order Items)
+				// 4. Create Order Items detail records
 				const itemsToInsert = cartItems.map((item: any) => ({
 					orderId: newOrder.id,
 					menuId: item.id,
@@ -44,9 +84,11 @@ export const actions: Actions = {
 			});
 
 			return { success: true, orderId: result.id };
-		} catch (e) {
+		} catch (e: any) {
 			console.error('Checkout error:', e);
-			return fail(500, { message: 'Gagal memproses pesanan silakan urulangi' });
+			return fail(400, { 
+				message: e instanceof Error ? e.message : 'Gagal memproses pesanan silakan ulangi' 
+			});
 		}
 	}
 };

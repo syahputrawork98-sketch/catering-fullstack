@@ -7,6 +7,7 @@ export interface CartItem {
 	image: string;
 	category: string;
 	quantity: number;
+	deliveryDate: string; // ISO Date String YYYY-MM-DD
 }
 
 class CartStore {
@@ -35,26 +36,29 @@ class CartStore {
 		});
 	}
 
-	addItem(menu: { id: string; name: string; price: number; image: string; category: string }) {
-		const existing = this.items.find((i) => i.id === menu.id);
+	addItem(menu: { id: string; name: string; price: number; image: string; category: string }, date: string) {
+		// We group by both ID AND Date. 
+		// If a user adds the same menu for two different dates, they should be different lines.
+		const existing = this.items.find((i) => i.id === menu.id && i.deliveryDate === date);
+		
 		if (existing) {
 			existing.quantity += 1;
 		} else {
-			this.items.push({ ...menu, quantity: 1 });
+			this.items.push({ ...menu, quantity: 1, deliveryDate: date });
 		}
 		this.isDrawerOpen = true; // Auto open when adding
 	}
 
-	removeItem(id: string) {
-		this.items = this.items.filter((i) => i.id !== id);
+	removeItem(id: string, date: string) {
+		this.items = this.items.filter((i) => !(i.id === id && i.deliveryDate === date));
 	}
 
-	updateQuantity(id: string, delta: number) {
-		const item = this.items.find((i) => i.id === id);
+	updateQuantity(id: string, date: string, delta: number) {
+		const item = this.items.find((i) => i.id === id && i.deliveryDate === date);
 		if (item) {
 			const newQty = item.quantity + delta;
 			if (newQty <= 0) {
-				this.removeItem(id);
+				this.removeItem(id, date);
 			} else {
 				item.quantity = newQty;
 			}

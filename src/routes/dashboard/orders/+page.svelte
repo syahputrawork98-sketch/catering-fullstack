@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import OrderStatusBadge from '$lib/components/OrderStatusBadge.svelte';
   import StatusStepper from '$lib/components/StatusStepper.svelte';
   import { generateThermalReceipt } from '$lib/utils/pdfGenerator';
@@ -6,15 +6,16 @@
   let { data } = $props();
   const orders = $derived(data.orders || []);
 
-  function formatPrice(val) {
+  function formatPrice(val: number | string) {
+		const price = typeof val === 'string' ? parseFloat(val) : val;
 		return new Intl.NumberFormat('id-ID', {
 			style: 'currency',
 			currency: 'IDR',
 			minimumFractionDigits: 0
-		}).format(val);
+		}).format(price);
 	}
 
-  function formatDate(date) {
+  function formatDate(date: string | Date) {
     return new Intl.DateTimeFormat('id-ID', {
       day: 'numeric',
       month: 'long',
@@ -33,10 +34,10 @@
   {#if orders.length === 0}
     <div class="py-20 text-center">
       <div class="w-20 h-20 bg-brand-primary/10 rounded-3xl flex items-center justify-center text-brand-primary mx-auto mb-6 text-2xl font-black">
-        C
+        G
       </div>
       <h2 class="text-xl font-bold text-brand-charcoal mb-4 text-center">Belum ada pesanan</h2>
-      <p class="text-zinc-500 mb-8 max-w-xs mx-auto text-center">Anda belum memiliki pesanan aktif saat ini. Silakan pilih menu untuk memulai pesanan pertama Anda.</p>
+      <p class="text-zinc-500 mb-8 max-w-xs mx-auto text-center">Anda belum memiliki pesanan aktif di Gourmet Hub. Silakan pilih menu untuk memulai pesanan pertama Anda.</p>
       <a href="/dashboard/menu" class="btn-primary">Lihat Menu Hari Ini</a>
     </div>
   {:else}

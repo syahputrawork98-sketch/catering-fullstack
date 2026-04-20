@@ -1,121 +1,138 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { page } from '$app/state';
-
+	import { fade, fly } from 'svelte/transition';
+	
+	let { form } = $props();
 	let loading = $state(false);
-	let category = $state('PUBLIK');
-
-	let message = $derived(page.form?.message);
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12 sm:px-6 lg:px-8">
-	<div class="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-sm border border-zinc-100">
-		<div class="text-center">
-			<div class="mx-auto w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center text-white font-bold text-3xl mb-6 shadow-lg shadow-brand-primary/20">C</div>
-			<h2 class="text-3xl font-extrabold tracking-tight text-brand-charcoal">
-				Daftar Akun Baru
-			</h2>
-			<p class="mt-2 text-sm text-zinc-500">
-				Mulai memesan katering katering sehat harian Anda
-			</p>
+<svelte:head>
+	<title>Daftar User | Gourmet Hub Premium Catering</title>
+</svelte:head>
+
+<div class="min-h-screen bg-zinc-50 flex items-center justify-center p-6 relative overflow-hidden">
+	<!-- Abstract Background Decoration -->
+	<div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-brand-primary/10 blur-[120px] rounded-full"></div>
+	<div class="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-brand-primary/5 blur-[120px] rounded-full"></div>
+
+	<div class="w-full max-w-md relative z-10" in:fly={{ y: 20, duration: 600 }}>
+		<!-- Logo & Title -->
+		<div class="text-center mb-10">
+			<a href="/" class="inline-flex items-center gap-3 mb-6 group">
+				<div class="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-primary/20 group-hover:rotate-12 transition-transform">G</div>
+				<span class="text-3xl font-black text-brand-charcoal tracking-tighter">Gourmet<span class="text-brand-primary font-black">Hub</span></span>
+			</a>
+			<h1 class="text-2xl font-black text-brand-charcoal">Bergabung dengan Kami</h1>
+			<p class="text-zinc-500 text-sm mt-2">Daftar sekarang untuk menikmati sajian gourmet harian.</p>
 		</div>
 
-		{#if message}
-			<div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 border border-red-100">
-				{message}
-			</div>
-		{/if}
+		<!-- Registration Card -->
+		<div class="bg-white rounded-[2.5rem] shadow-2xl shadow-zinc-200/50 border border-zinc-100 p-10 overflow-hidden relative">
+			
+			<form 
+				method="POST" 
+				use:enhance={() => {
+					loading = true;
+					return async ({ update }) => {
+						loading = false;
+						update();
+					};
+				}}
+				class="space-y-6"
+			>
+                <!-- Hidden Category for Personal Users -->
+                <input type="hidden" name="category" value="PUBLIK" />
 
-		<form class="mt-8 space-y-6" method="POST" use:enhance={() => {
-			loading = true;
-			return async ({ update }) => {
-				loading = false;
-				update();
-			};
-		}}>
-			<div class="space-y-4 rounded-md shadow-sm">
-				<div>
-					<label for="name" class="block text-sm font-medium text-zinc-700">Nama Lengkap</label>
-					<input
-						id="name"
-						name="name"
-						type="text"
-						required
-						class="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all sm:text-sm"
-						placeholder="Nama Lengkap"
-					/>
+				<!-- Progress Label -->
+				<div class="flex items-center gap-4 mb-4">
+					<span class="text-[10px] font-black text-brand-primary uppercase tracking-widest px-3 py-1 bg-brand-primary/10 rounded-full">Akun Personal</span>
+					<div class="h-[1px] flex-1 bg-zinc-100"></div>
 				</div>
 
-				<div>
-					<label for="phone" class="block text-sm font-medium text-zinc-700">Nomor Telepon</label>
-					<input
-						id="phone"
-						name="phone"
-						type="tel"
-						required
-						class="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all sm:text-sm"
-						placeholder="08123456789"
-					/>
-				</div>
-
-				<div>
-					<label for="password" class="block text-sm font-medium text-zinc-700">Kata Sandi</label>
-					<input
-						id="password"
-						name="password"
-						type="password"
-						required
-						class="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all sm:text-sm"
-						placeholder="••••••••"
-					/>
-				</div>
-
-				<div>
-					<label for="category" class="block text-sm font-medium text-zinc-700">Kategori Pelanggan</label>
-					<select
-						id="category"
-						name="category"
-						bind:value={category}
-						class="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-900 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all sm:text-sm"
-					>
-						<option value="PUBLIK">Umum / Publik</option>
-						<option value="INSTANSI">Instansi / Kantor</option>
-					</select>
-				</div>
-
-				{#if category === 'INSTANSI'}
+				<div class="space-y-4">
 					<div>
-						<label for="instansiName" class="block text-sm font-medium text-zinc-700">Nama Instansi</label>
-						<input
-							id="instansiName"
-							name="instansiName"
-							type="text"
-							required
-							class="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary transition-all sm:text-sm"
-							placeholder="Masukkan Nama Instansi"
-						/>
+						<label class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 px-1">Nama Lengkap</label>
+						<div class="relative">
+							<input 
+								type="text" 
+								name="name" 
+								required 
+								placeholder="E.g. Andi Pratama"
+								class="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal"
+							/>
+							<svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+							</svg>
+						</div>
+					</div>
+
+					<div>
+						<label class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 px-1">Nomor Telepon</label>
+						<div class="relative">
+							<input 
+								type="text" 
+								name="phone" 
+								required 
+								placeholder="0812xxxxxx"
+								class="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal"
+							/>
+							<svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+							</svg>
+						</div>
+					</div>
+
+					<div>
+						<label class="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 px-1">Kata Sandi</label>
+						<div class="relative">
+							<input 
+								type="password" 
+								name="password" 
+								required 
+								placeholder="••••••••"
+								class="w-full pl-12 pr-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal"
+							/>
+							<svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				{#if form?.message}
+					<div class="px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3" in:fade>
+						<svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						<p class="text-xs font-bold text-red-600">{form.message}</p>
 					</div>
 				{/if}
-			</div>
 
-			<div>
-				<button
-					type="submit"
+				<button 
 					disabled={loading}
-					class="btn-primary w-full disabled:opacity-50"
+					class="w-full py-4 bg-brand-primary text-white rounded-2xl font-black shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
 				>
 					{#if loading}
-						<span class="mr-2 italic">Mendaftarkan...</span>
+						<svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						</svg>
+						Mendaftarkan...
 					{:else}
-						Daftar Sekarang
+						Buat Akun Saya
 					{/if}
 				</button>
-			</div>
-		</form>
+			</form>
 
-		<p class="text-center text-sm text-zinc-500">
-			Sudah punya akun?
-			<a href="/login" class="font-bold text-brand-primary hover:underline">Masuk di sini</a>
-		</p>
+			<div class="mt-8 pt-8 border-t border-zinc-50 text-center">
+				<p class="text-sm text-zinc-500">Sudah punya akun? <a href="/login" class="text-brand-primary font-black hover:underline">Masuk</a></p>
+			</div>
+
+            <!-- B2B Note -->
+            <div class="mt-10 p-5 bg-zinc-50 rounded-2xl border border-zinc-100">
+                <p class="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter mb-1">Mewakili Instansi/Dinas?</p>
+                <p class="text-[11px] text-zinc-500 leading-relaxed font-medium">Bagi instansi pemerintah atau korporat, akun akan dibuatkan secara manual oleh CS setelah diskusi via <a href="https://wa.me/xxx" class="text-brand-primary font-black">WhatsApp</a>.</p>
+            </div>
+		</div>
 	</div>
 </div>

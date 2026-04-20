@@ -1,24 +1,16 @@
-<script>
-  import OrderStatusBadge from '$lib/components/OrderStatusBadge.svelte';
-  import { generateThermalReceipt } from '$lib/utils/pdfGenerator';
-  import { enhance } from '$app/forms';
-  
-  let { data } = $props();
-  const orders = $derived(data.orders || []);
+<script lang="ts">
+	import { enhance } from '$app/forms';
+	import { fade } from 'svelte/transition';
+	import { cart } from '$lib/stores/cartStore.svelte'; // Just for price formatting if shared
 
-  let selectedStatus = $state("Semua");
-  let searchQuery = $state("");
-  let updatingId = $state("");
+	let { data } = $props();
 
-  const filteredOrders = $derived(
-    orders.filter(o => 
-      (selectedStatus === "Semua" || o.status === selectedStatus) &&
-      (o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-       o.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
-  );
+	let searchQuery = $state('');
+	let selectedStatus = $state('ALL');
 
-  function formatPrice(val) {
+	const todayStr = new Date().toISOString().split('T')[0];
+
+	function formatPrice(val: number) {
 		return new Intl.NumberFormat('id-ID', {
 			style: 'currency',
 			currency: 'IDR',
@@ -26,187 +18,174 @@
 		}).format(val);
 	}
 
-  const statCounters = $derived({
-    total: orders.length,
-    pending: orders.filter(o => o.status === 'PENDING').length,
-    today: orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length
-  });
+	function formatDate(dateStr: string) {
+		const d = new Date(dateStr);
+		return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+	}
 
-  const statuses = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED"];
+	let filteredOrders = $derived(
+		(data.orders || []).filter((order: any) => {
+			const matchesSearch = 
+				order.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+				order.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+			const matchesStatus = selectedStatus === 'ALL' || order.status === selectedStatus;
+			return matchesSearch && matchesStatus;
+		})
+	);
+
+	// Stats for logic cards
+	let stats = $derived({
+		total: data.orders.length,
+		pending: data.orders.filter((o: any) => o.status === 'PENDING').length,
+		today: data.orders.filter((o: any) => o.deliveryDate === todayStr).length
+	});
+
+	let updatingId = $state<string | null>(null);
 </script>
 
-<div class="px-8 py-10">
-  <div class="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-    <div>
-      <h1 class="text-3xl font-black text-brand-charcoal tracking-tight">Manajemen Pesanan</h1>
-      <p class="text-zinc-500 text-sm mt-1">Pantau dan kelola proses katering pelanggan Anda.</p>
-    </div>
-    
-    <div class="flex items-center gap-3">
-      <div class="relative">
-        <input 
-          type="text" 
-          bind:value={searchQuery}
-          placeholder="Cari ID atau Nama..." 
-          class="pl-10 pr-4 py-2 bg-white border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all w-64"
-        />
-        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-      </div>
-    </div>
-  </div>
+<div class="px-6 py-8 h-full overflow-y-auto bg-zinc-50/30">
+	<!-- Header -->
+	<div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+		<div>
+			<h1 class="text-3xl font-black text-brand-charcoal tracking-tight">Operation Center</h1>
+			<p class="text-zinc-500 text-sm mt-1">Kelola pesanan dan prioritaskan pengiriman hari ini.</p>
+		</div>
 
-  <!-- Stats Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-    <div class="bg-white rounded-3xl border border-zinc-100 p-6 shadow-sm hover:shadow-xl hover:shadow-brand-primary/5 transition-all">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center text-brand-primary border border-zinc-100">
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Total Pesanan</p>
-          <p class="text-2xl font-black text-brand-charcoal">{statCounters.total}</p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-white rounded-3xl border border-zinc-100 p-6 shadow-sm hover:shadow-xl hover:shadow-brand-primary/5 transition-all">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 border border-amber-100">
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Menunggu</p>
-          <p class="text-2xl font-black text-brand-charcoal">{statCounters.pending}</p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-white rounded-3xl border border-zinc-100 p-6 shadow-sm hover:shadow-xl hover:shadow-brand-primary/5 transition-all">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 border border-indigo-100">
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Hari Ini</p>
-          <p class="text-2xl font-black text-brand-charcoal">{statCounters.today}</p>
-        </div>
-      </div>
-    </div>
-  </div>
+		<div class="flex items-center gap-4">
+			<div class="relative w-full md:w-64">
+				<input 
+					type="text" 
+					bind:value={searchQuery}
+					placeholder="Cari ID atau Nama..."
+					class="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 shadow-sm"
+				/>
+				<svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+				</svg>
+			</div>
+			
+			<select 
+				bind:value={selectedStatus}
+				class="bg-white border border-zinc-100 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-primary/20 shadow-sm"
+			>
+				<option value="ALL">Semua Status</option>
+				<option value="PENDING">Pending</option>
+				<option value="PAID">Dibayar</option>
+				<option value="SHIPPED">Dikirim</option>
+				<option value="COMPLETED">Selesai</option>
+				<option value="CANCELLED">Dibatalkan</option>
+			</select>
+		</div>
+	</div>
 
-  <!-- Filter & Order Table -->
-  <div class="bg-white rounded-[32px] border border-zinc-100 shadow-sm overflow-hidden">
-    <div class="p-6 border-b border-zinc-100 flex items-center justify-between gap-4 overflow-x-auto">
-      <div class="flex items-center gap-2 min-w-max">
-        {#each ["Semua", ...statuses] as s}
-          <button 
-            onclick={() => selectedStatus = s}
-            class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all
-                   {selectedStatus === s 
-                    ? 'bg-brand-charcoal text-white shadow-lg' 
-                    : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}"
-          >
-            {s}
-          </button>
-        {/each}
-      </div>
-    </div>
+	<!-- Quick Stats -->
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+		<div class="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm">
+			<p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Total Pesanan</p>
+			<h3 class="text-3xl font-black text-brand-charcoal">{stats.total}</h3>
+		</div>
+		<div class="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm">
+			<p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Butuh Verifikasi</p>
+			<h3 class="text-3xl font-black text-brand-primary">{stats.pending}</h3>
+		</div>
+		<div class="bg-brand-charcoal p-6 rounded-3xl shadow-xl shadow-brand-charcoal/20 text-white relative overflow-hidden">
+			<div class="relative z-10">
+				<p class="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Pengiriman Hari Ini</p>
+				<h3 class="text-3xl font-black">{stats.today}</h3>
+			</div>
+			<svg class="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-white/5" fill="currentColor" viewBox="0 0 24 24">
+				<path d="M11 20H4a2 2 0 01-2-2V5c0-1.1.9-2 2-2h8l2 2h7a2 2 0 012 2v10a2 2 0 01-2 2h-1" />
+			</svg>
+		</div>
+	</div>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-zinc-50/50">
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100">Order ID</th>
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100">Customer</th>
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100">Tanggal</th>
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100">Total Price</th>
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100">Status</th>
-            <th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-widest border-b border-zinc-100 text-center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-zinc-50">
-          {#each filteredOrders as order}
-            <tr class="group hover:bg-zinc-50/50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm font-black text-brand-charcoal uppercase tracking-tighter">ID: {order.id.slice(0, 8)}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-[10px] font-bold text-brand-primary">
-                    {order.user?.name?.charAt(0) || 'U'}
-                  </div>
-                  <div class="flex flex-col">
-                    <span class="text-sm font-bold text-brand-charcoal">{order.user?.name || 'Unknown'}</span>
-                    <span class="text-[10px] text-zinc-400 font-medium">{order.user?.category || 'Umum'}</span>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-xs text-zinc-500 font-medium whitespace-nowrap">
-                 {new Date(order.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="text-sm font-black text-brand-charcoal">{formatPrice(order.grandTotal)}</span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <form 
-                  method="POST" 
-                  action="?/updateStatus"
-                  use:enhance={() => {
-                    updatingId = order.id;
-                    return async ({ update }) => {
-                       updatingId = "";
-                       await update();
-                    };
-                  }}
-                >
-                  <input type="hidden" name="orderId" value={order.id} />
-                  <select 
-                    name="status" 
-                    value={order.status}
-                    onchange={(e) => e.target.form.requestSubmit()}
-                    disabled={updatingId === order.id}
-                    class="bg-zinc-50 border border-zinc-100 rounded-lg text-[10px] font-black uppercase tracking-widest px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 appearance-none cursor-pointer disabled:opacity-50"
-                  >
-                    {#each statuses as s}
-                      <option value={s}>{s}</option>
-                    {/each}
-                  </select>
-                </form>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-center">
-                <div class="flex items-center justify-center gap-3">
-                   <button 
-                     onclick={() => generateThermalReceipt(order)}
-                     title="Cetak Struk"
-                     class="p-2 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-brand-charcoal hover:text-white transition-all shadow-sm"
-                   >
-                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                     </svg>
-                   </button>
-                   <OrderStatusBadge status={order.status} />
-                   {#if updatingId === order.id}
-                     <div class="animate-spin h-3 w-3 border-2 border-brand-primary border-t-transparent rounded-full"></div>
-                   {/if}
-                </div>
-              </td>
-            </tr>
-          {/each}
-          {#if filteredOrders.length === 0}
-            <tr>
-              <td colspan="6" class="px-6 py-12 text-center text-zinc-400 italic text-sm">
-                Tidak ada pesanan ditemukan...
-              </td>
-            </tr>
-          {/if}
-        </tbody>
-      </table>
-    </div>
-  </div>
+	<!-- Order Table -->
+	<div class="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
+		<div class="overflow-x-auto">
+			<table class="w-full text-left border-collapse">
+				<thead>
+					<tr class="bg-zinc-50 border-b border-zinc-100">
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">ID & Pelanggan</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Dibuat Pada</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Tanggal Kirim</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Item</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Total</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter text-right">Status</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-zinc-50">
+					{#each filteredOrders as order (order.id)}
+						<tr class="hover:bg-zinc-50/50 transition-colors {order.deliveryDate === todayStr ? 'bg-brand-primary/5' : ''}">
+							<td class="px-6 py-5">
+								<div class="flex flex-col">
+									<span class="text-xs font-mono text-zinc-400">#{order.id.slice(0, 8)}</span>
+									<span class="text-sm font-bold text-brand-charcoal">{order.user?.name}</span>
+									<span class="text-[10px] text-zinc-500">{order.user?.category}</span>
+								</div>
+							</td>
+							<td class="px-6 py-5 text-xs text-zinc-500">
+								{new Date(order.createdAt).toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+							</td>
+							<td class="px-6 py-5">
+								<div class="flex items-center gap-2">
+									{#if order.deliveryDate === todayStr}
+										<span class="w-2 h-2 rounded-full bg-brand-primary animate-pulse"></span>
+										<span class="text-xs font-black text-brand-primary">HARI INI</span>
+									{:else}
+										<span class="text-xs text-zinc-500 font-medium">{formatDate(order.deliveryDate)}</span>
+									{/if}
+								</div>
+							</td>
+							<td class="px-6 py-5 text-xs text-zinc-500">
+								{order.orderItems.length} menu ({order.orderItems.reduce((acc: number, item: any) => acc + item.quantity, 0)} porsi)
+							</td>
+							<td class="px-6 py-5 font-bold text-sm text-brand-charcoal">
+								{formatPrice(parseFloat(order.grandTotal))}
+							</td>
+							<td class="px-6 py-5 text-right">
+								<form 
+									method="POST" 
+									action="?/updateStatus" 
+									use:enhance={() => {
+										updatingId = order.id;
+										return async () => { updatingId = null; };
+									}}
+								>
+									<input type="hidden" name="orderId" value={order.id} />
+									<div class="relative inline-flex items-center">
+										{#if updatingId === order.id}
+											<div class="absolute -left-6" in:fade>
+												<svg class="animate-spin h-4 w-4 text-brand-primary" viewBox="0 0 24 24">
+													<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+													<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+												</svg>
+											</div>
+										{/if}
+										<select 
+											name="status"
+											value={order.status}
+											onchange={(e) => e.currentTarget.form?.requestSubmit()}
+											class="bg-zinc-100 border-none rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-brand-primary/20 cursor-pointer"
+										>
+											<option value="PENDING">Pending</option>
+											<option value="PAID">Dibayar</option>
+											<option value="SHIPPED">Dikirim</option>
+											<option value="COMPLETED">Selesai</option>
+											<option value="CANCELLED">Dibatalkan</option>
+										</select>
+									</div>
+								</form>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		
+		{#if filteredOrders.length === 0}
+			<div class="py-20 text-center text-zinc-400 bg-white">
+				<p class="italic text-sm">Tidak ada pesanan ditemukan.</p>
+			</div>
+		{/if}
+	</div>
 </div>

@@ -7,6 +7,7 @@ export const roleEnum = pgEnum('role', ['ADMIN', 'CUSTOMER_SERVICE', 'USER']);
 export const statusEnum = pgEnum('status', ['PENDING', 'ACTIVE']);
 export const categoryEnum = pgEnum('category', ['PUBLIK', 'INSTANSI']);
 export const orderStatusEnum = pgEnum('order_status', ['PENDING', 'PAID', 'CANCELLED', 'SHIPPED', 'COMPLETED']);
+export const menuCategoryEnum = pgEnum('menu_category', ['DAILY', 'PAKET']);
 
 // --- Auth.js Tables ---
 
@@ -79,6 +80,7 @@ export const menus = pgTable('menu', {
 	description: text('description'),
 	image: text('image'),
 	basePrice: decimal('base_price', { precision: 12, scale: 2 }).notNull(),
+	category: menuCategoryEnum('category').default('DAILY').notNull(),
 	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
 });
 
@@ -99,6 +101,7 @@ export const orders = pgTable('order', {
 		.references(() => users.id, { onDelete: 'set null' }), // Keep orders even if user is deleted
 	status: orderStatusEnum('status').default('PENDING').notNull(),
 	grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+	deliveryDate: date('delivery_date').notNull(),
 	paymentProof: text('payment_proof'),
 	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
 });
@@ -141,5 +144,13 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 export const menusRelations = relations(menus, ({ many }) => ({
-	orderItems: many(orderItems)
+	orderItems: many(orderItems),
+	dailySchedules: many(dailySchedules)
+}));
+
+export const dailySchedulesRelations = relations(dailySchedules, ({ one }) => ({
+	menu: one(menus, {
+		fields: [dailySchedules.menuId],
+		references: [menus.id]
+	})
 }));

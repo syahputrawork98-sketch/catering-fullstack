@@ -1,72 +1,101 @@
-# 🍱 Catering Instansi - Frontend Hub (Portfolio Ready)
+# 🍱 Gourmet Hub - Fullstack Catering Solution
 
-> **Solusi Pemesanan Katering Digital untuk Ekosistem Instansi yang Modern, Cepat, dan Responsif.**
+> **A premium, hybrid B2B & B2C platform designed for high-performance catering operations and logistics.**
 
-Repositori ini merupakan sisi **Frontend** dari proyek *Fullstack Catering*. Dibangun dengan fokus utama pada pengalaman pengguna mobile (*Mobile-First*), sistem ini memungkinkan pelanggan dari berbagai instansi untuk memesan menu harian dengan standar estetika yang tinggi (*Rich Aesthetics*) dan performa yang optimal.
-
----
-
-## 🚀 Filosofi Teknologi & Desain
-
-### 1. **SvelteKit (High-Performance Framework)**
-Dipilih karena pendekatan *Zero-Virtual DOM* yang menghasilkan bundle JavaScript sangat kecil. Hal ini krusial untuk pengguna mobile agar aplikasi tetap gegas meskipun dalam koneksi internet terbatas.
-
-### 2. **Tailwind CSS (Adaptive UI)**
-Memungkinkan pembuatan antarmuka yang benar-benar responsif melalui pendekatan *Utility-First*. Desain diarahkan ke gaya *Modern Clean* yang menonjolkan kelezatan visual produk makanan.
-
-### 3. **Security & Access Guard**
-- **RBAC (Role-Based Access Control)**: Implementasi *Route Guarding* menggunakan SvelteKit Hooks untuk memastikan modul Admin/CS tidak dapat diakses oleh pengguna biasa.
-- **CSRF & XSS Protection**: Proteksi bawaan SvelteKit terhadap serangan *Cross-Site Request Forgery* dan *Cross-Site Scripting*.
-- **Secure Sessions**: Token sesi disimpan dalam **HttpOnly Cookies** untuk mencegah pencurian token melalui JavaScript (Client-side).
-- **Graceful Error Handling**: Sistem feedback user yang aman tanpa membocorkan detail teknis server saat terjadi error.
+**Gourmet Hub** is a state-of-the-art catering management system built to handle the complexities of institutional catering (offices/instansi) and public demand. It focuses on a **Mobile-First** experience, **Rich Aesthetics**, and **Atomic Reliability**.
 
 ---
 
-## 🛠️ Fitur Modular (Frontend Focus)
+## 🚀 Strategic Tech Stack
 
-### 🧺 Modul User / Customer
-- **Katalog Menu Harian**: Navigasi menu yang tersedia di tanggal berjalan dengan indikator stok real-time.
-- **Persistent Cart**: Keranjang belanja yang tetap tersimpan (LocalStorage) meskipun halaman dimuat ulang.
-- **Order Tracking**: Visualisasi progres pesanan (Pending -> Diproses -> Dikirim -> Selesai).
-- **Digital Receipt (PDF)**: Antarmuka untuk melihat dan mengunduh bon pembayaran dalam format termal.
+This project leverages the bleeding edge of web development to ensure scalability, security, and developer productivity.
 
-### 🌐 Modul Public
-- **Landing Page**: Informasi *branding* instansi katering, panduan pemesanan, dan FAQ.
-- **Self-Registration**: Alur pendaftaran mandiri yang intuitif dengan pilihan kategori Instansi/Umum.
+### ⚡ **Frontend: Svelte 5 (Next-Gen Reactivity)**
+- **Runes Architecture**: Utilizing `$state`, `$derived`, and `$props` for fine-grained reactivity, leading to ultra-small bundles and blazing-fast performance.
+- **Vibrant Gourmet UI**: A custom design system built with **Tailwind CSS 4**, featuring glassmorphism, smooth micro-interactions, and high visual density.
+
+### ⚙️ **Backend: SvelteKit & Drizzle ORM**
+- **Type-Safe Persistence**: Powered by **Drizzle ORM** and **PostgreSQL**, ensuring database integrity with a relational schema and atomic transactions.
+- **Business Logic**: Robust server loaders and actions that bridge the gap between complex SQL and reactive UI.
+
+### 🛡️ **Security: Auth.js & RBAC**
+- **Identity Management**: Secure authentication via **Auth.js** (formerly NextAuth) with a JWT-based strategy and HttpOnly cookie enforcement.
+- **Role-Based Access Control (RBAC)**: A strict multi-layered guard system (Middleware + Server Hooks) ensuring Admin, CS, and Users only access their respective domains.
 
 ---
 
-## 📐 Alur Navigasi (UI Flow)
+## 🏗️ Technical Architecture
 
+### **Domain-Driven Design (DDD)**
+The system is architected into specific modules for specialized operations:
+- **Portal (Public)**: High-SEO landing page and self-registration funnel.
+- **Customer Hub (User)**: Daily catalog browsing, persistent cart, and branded receipt generation.
+- **Operational Center (CS)**: Real-time order mutation, status tracking, and kitchen logistics.
+- **Governance Suite (Admin)**: Financial oversight, RBAC management, and system-wide audits.
+
+### **System Workflow**
 ```mermaid
-graph TD
-    A[Landing Page] -->|Browse| B(View Catalog Only)
-    A -->|Register| C{Pending Approval}
-    A -->|Login| D[User Dashboard]
-    D -->|Select Menu| E[Shopping Cart]
-    E -->|Checkout| F[Payment Process]
-    F -->|Track| G[Order Status]
-    G -->|Finish| H[Purchase History]
+graph LR
+    A[Visitor] -->|Register| B{Role Guard}
+    B -->|User| C[Customer Dash]
+    B -->|Staff| D[CS Dashboard]
+    B -->|Owner| E[Admin Dashboard]
+    C -->|Order| F((Database))
+    D -->|Update| F
+    E -->|Analyze| F
 ```
 
 ---
 
-## 📂 Struktur Proyek
-Untuk detail daftar pengerjaan atomik (Front-end), silakan merujuk ke:
-- [Checklist Frontend: Public](../modules/public/FRONTEND.md)
-- [Checklist Frontend: User](../modules/user/FRONTEND.md)
+## 💎 Key Technical Features
+
+- **Branded PDF Engine**: High-fidelity 80mm thermal receipt generator using **jsPDF** and **jspdf-autotable**. 
+- **Atomic Stock Management**: (In Progress) Ensuring inventory consistency across concurrent user orders.
+- **Relational Snapshots**: Preserving price and product data at the moment of order to ensure financial audit integrity.
+- **Gourmet UX**: Custom iconography (Lucide) and premium typography (Inter) for a high-end enterprise feel.
 
 ---
 
-## 🚀 Menjalankan Proyek Secara Lokal
+## 🛠️ Installation & Setup
 
-1. Clone repositori ini.
-2. Jalankan `npm install`.
-3. Jalankan server pengembangan:
-   ```bash
-   npm run dev
-   ```
-4. Akses melalui `http://localhost:5173`.
+### **Prerequisites**
+- Node.js 20+
+- Docker & Docker Compose (for PostgreSQL)
+
+### **1. Clone & Install**
+```bash
+git clone <repository-url>
+cd catering-fullstack
+npm install
+```
+
+### **2. Infrastructure (Docker)**
+Spin up the database and pgAdmin:
+```bash
+docker-compose up -d
+```
+
+### **3. Environment Config**
+Create a `.env` file based on `.env.example`:
+```env
+DATABASE_URL="postgres://admin:admin_password@localhost:5432/catering_db"
+AUTH_SECRET="your-32-char-secret"
+```
+
+### **4. Database Sync**
+```bash
+npx drizzle-kit push
+```
+
+### **5. Run Development**
+```bash
+npm run dev
+```
 
 ---
-*Proyek ini dirancang sebagai bagian dari sistem katering terpadu. Lihat [Pusat Kontrol Proyek](../README.md) untuk gambaran sistem secara keseluruhan.*
+
+## 👨‍💻 Portfolio Reference
+*This project is part of a larger ecosystem managed by the **Brain & Muscles** philosophy. For full system documentation (Master Kanban, SOPs, and Modular Brain), please refer to the [Root Repository](../README.md).*
+
+---
+*Developed with technical precision and design excellence.*
