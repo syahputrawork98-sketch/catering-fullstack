@@ -1,10 +1,11 @@
-import { pgTable, text, timestamp, primaryKey, integer, pgEnum, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, primaryKey, integer, pgEnum, uuid, decimal, date, serial } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from '@auth/core/adapters';
 
 // --- Enums ---
 export const roleEnum = pgEnum('role', ['ADMIN', 'CUSTOMER_SERVICE', 'USER']);
 export const statusEnum = pgEnum('status', ['PENDING', 'ACTIVE']);
 export const categoryEnum = pgEnum('category', ['PUBLIK', 'INSTANSI']);
+export const orderStatusEnum = pgEnum('order_status', ['PENDING', 'PAID', 'CANCELLED', 'SHIPPED', 'COMPLETED']);
 
 // --- Auth.js Tables ---
 
@@ -16,7 +17,7 @@ export const users = pgTable('user', {
 	role: roleEnum('role').default('USER').notNull(),
 	category: categoryEnum('category').default('PUBLIK').notNull(),
 	instansiName: text('instansi_name'),
-	status: statusEnum('status').default('ACTIVE').notNull(),
+	status: statusEnum('status').default('ACTIVE').notNull(), // Defaults to ACTIVE for PUBLIK, manual shift for INSTANSI
 	image: text('image'),
 	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
 });
@@ -68,3 +69,47 @@ export const verificationTokens = pgTable(
 		}
 	]
 );
+
+// --- Business Tables ---
+
+export const menus = pgTable('menu', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	name: text('name').notNull(),
+	description: text('description'),
+	image: text('image'),
+	basePrice: decimal('base_price', { precision: 12, scale: 2 }).notNull(),
+	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
+});
+
+export const dailySchedules = pgTable('daily_schedule', {
+	id: serial('id').primaryKey(),
+	menuId: uuid('menu_id')
+		.notNull()
+		.references(() => menus.id, { onDelete: 'cascade' }),
+	availableDate: date('available_date', { mode: 'string' }).notNull(),
+	currentStock: integer('current_stock').notNull().default(0),
+	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
+});
+
+export const orders = pgTable('order', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'set null' }), // Keep orders even if user is deleted
+	status: orderStatusEnum('status').default('PENDING').notNull(),
+	grandTotal: decimal('grand_total', { precision: 12, scale: 2 }).notNull(),
+	paymentProof: text('payment_proof'),
+	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
+});
+
+export const orderItems = pgTable('order_item', {
+	id: serial('id').primaryKey(),
+	orderId: uuid('order_id')
+		.notNull()
+		.references(() => orders.id, { onDelete: 'cascade' }),
+	menuId: uuid('menu_id')
+		.notNull()
+		.references(() => menus.id, { onDelete: 'set null' }),
+	priceSnapshot: decimal('price_snapshot', { precision: 12, scale: 2 }).notNull(),
+	quantity: integer('quantity').notNull().default(1)
+});

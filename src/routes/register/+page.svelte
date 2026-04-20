@@ -2,10 +2,10 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 
-	let loading = false;
-	let category = 'PUBLIK';
+	let loading = $state(false);
+	let category = $state('PUBLIK');
 
-	const message = page.form?.message;
+	let message = $derived(page.form?.message);
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950 sm:px-6 lg:px-8">

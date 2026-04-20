@@ -17,6 +17,10 @@ export const actions = {
 			return fail(400, { message: 'Data tidak lengkap' });
 		}
 
+		if (category === 'INSTANSI' && !instansiName) {
+			return fail(400, { message: 'Nama instansi wajib diisi untuk kategori Instansi' });
+		}
+
 		// Hash password
 		const hashedPassword = await argon2.hash(password);
 
