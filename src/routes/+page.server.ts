@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { dailySchedules, menus } from '$lib/server/db/schema';
+import { dailySchedules, menus, menuTypes } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
@@ -23,8 +23,13 @@ export const load: PageServerLoad = async ({ url }) => {
 
         // 3. Fetch Always-Available PACKAGES (Paket)
         const packageMenus = await db.query.menus.findMany({
-            where: eq(menus.category, 'PAKET')
+            with: {
+                type: true
+            }
         });
+
+        // Filter packages in JS to ensure we get only 'paket' type
+        const filteredPackages = packageMenus.filter(m => m.type?.slug === 'paket');
 
         // 4. Generate metadata for the 7-day Date Scroller
         const dateItems = Array.from({ length: 7 }).map((_, i) => {
@@ -42,7 +47,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
         return {
             menus: catalogMenus,
-            packages: packageMenus,
+            packages: filteredPackages,
             selectedDate,
             dateItems
         };

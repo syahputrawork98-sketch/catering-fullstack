@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import argon2 from 'argon2';
 import type { PageServerLoad, Actions } from './$types';
@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Fetch all Clients (INSTANSI)
 	const clients = await db.query.users.findMany({
-		where: inArray(users.category, ['INSTANSI_PEGAWAI', 'INSTANSI_BISNIS']),
+		where: inArray(users.category, ['INSTANSI_BISNIS', 'INSTANSI_PEGAWAI']),
 		orderBy: [desc(users.createdAt)]
 	});
 

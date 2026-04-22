@@ -10,7 +10,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	if (!session?.user?.id) {
 		throw error(401, 'Silakan login terlebih dahulu');
 	}
-	*/
 
 
 
@@ -36,5 +35,29 @@ export const load: PageServerLoad = async ({ locals }) => {
         return {
             orders: []
         };
+    }
+};
+
+export const actions = {
+    uploadProof: async ({ request, locals }) => {
+        const session = await locals.auth();
+        if (!session?.user?.id) throw error(401, 'Unauthorized');
+
+        const formData = await request.formData();
+        const orderId = formData.get('orderId') as string;
+        const image = formData.get('image') as string; // Base64 resized image
+
+        if (!orderId || !image) return { success: false, message: 'Data tidak lengkap' };
+
+        try {
+            await db.update(orders)
+                .set({ paymentProof: image })
+                .where(eq(orders.id, orderId));
+            
+            return { success: true, message: 'Bukti pembayaran berhasil diunggah' };
+        } catch (e) {
+            console.error('Upload proof error:', e);
+            return { success: false, message: 'Gagal mengunggah bukti' };
+        }
     }
 };

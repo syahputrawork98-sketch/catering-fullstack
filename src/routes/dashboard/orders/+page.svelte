@@ -2,8 +2,9 @@
   import OrderStatusBadge from '$lib/components/OrderStatusBadge.svelte';
   import StatusStepper from '$lib/components/StatusStepper.svelte';
   import { generateThermalReceipt } from '$lib/utils/pdfGenerator';
+  import { enhance } from '$app/forms';
   
-  let { data } = $props();
+  let { data } = $props<{ data: { orders: any[] } }>();
   const orders = $derived(data.orders || []);
 
   function formatPrice(val: number | string) {
@@ -21,6 +22,42 @@
       month: 'long',
       year: 'numeric'
     }).format(new Date(date));
+  }
+
+  // --- Image Resizing Logic (Max 400px) ---
+  async function handleFileUpload(event: Event, orderId: string, form: HTMLFormElement) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        const base64 = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Inject into hidden fields and submit
+        const imageInput = form.querySelector('input[name="image"]') as HTMLInputElement;
+        imageInput.value = base64;
+        form.requestSubmit();
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   }
 </script>
 
@@ -66,17 +103,61 @@
                 <p class="text-[10px] text-zinc-400 uppercase font-black tracking-widest mb-1">Total Pembayaran</p>
                 <p class="text-3xl font-black text-brand-primary">{formatPrice(order.grandTotal)}</p>
               </div>
-              <button 
-                onclick={() => generateThermalReceipt(order)}
-                class="flex items-center gap-2 px-4 py-2 bg-brand-charcoal text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-md group-hover:scale-105"
-              >
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Cetak Struk
-              </button>
+
+              <div class="flex items-center gap-2">
+                <button 
+                  onclick={() => generateThermalReceipt(order)}
+                  class="flex items-center gap-2 px-4 py-2.5 bg-zinc-100 text-brand-charcoal rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Cetak Struk
+                </button>
+
+                {#if order.status === 'PENDING'}
+                  <form 
+                    method="POST" 
+                    action="?/uploadProof" 
+                    class="relative"
+                    use:enhance
+                  >
+                    <input type="hidden" name="orderId" value={order.id} />
+                    <input type="hidden" name="image" value="" />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      class="hidden" 
+                      id="upload-{order.id}" 
+                      onchange={(e) => handleFileUpload(e, order.id, e.currentTarget.form!)}
+                    />
+                    <label 
+                      for="upload-{order.id}"
+                      class="flex items-center gap-2 px-5 py-2.5 bg-brand-charcoal text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all cursor-pointer shadow-lg shadow-brand-charcoal/20"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      {order.paymentProof ? 'Update Bukti' : 'Upload Bukti'}
+                    </label>
+                  </form>
+                {/if}
+              </div>
             </div>
           </div>
+
+          <!-- Payment Proof Preview (User Side) -->
+          {#if order.paymentProof}
+            <div class="mb-8 p-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200 flex items-center gap-4">
+               <div class="w-12 h-16 bg-white rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                 <img src={order.paymentProof} alt="Bukti" class="w-full h-full object-cover" />
+               </div>
+               <div>
+                 <p class="text-[10px] font-black text-brand-charcoal uppercase tracking-widest">Bukti Pembayaran Terkirim</p>
+                 <p class="text-xs text-zinc-400 font-medium">Staff CS akan segera memverifikasi pesanan Anda.</p>
+               </div>
+            </div>
+          {/if}
 
           <!-- Stepper Integration -->
           <div class="mb-12 px-4">

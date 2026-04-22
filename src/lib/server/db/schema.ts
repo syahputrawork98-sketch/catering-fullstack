@@ -5,7 +5,7 @@ import type { AdapterAccountType } from '@auth/core/adapters';
 // --- Enums ---
 export const roleEnum = pgEnum('role', ['ADMIN', 'CUSTOMER_SERVICE', 'USER']);
 export const statusEnum = pgEnum('status', ['PENDING', 'ACTIVE']);
-export const categoryEnum = pgEnum('category', ['PUBLIK', 'INSTANSI', 'PEGAWAI_INSTANSI']);
+export const categoryEnum = pgEnum('category', ['PUBLIK', 'INSTANSI_BISNIS', 'INSTANSI_PEGAWAI']);
 export const orderStatusEnum = pgEnum('order_status', ['PENDING', 'PAID', 'CANCELLED', 'SHIPPED', 'COMPLETED']);
 // export const menuCategoryEnum = pgEnum('menu_category', ['DAILY', 'PAKET']); // Deprecated in favor of dynamic tables
 
@@ -111,6 +111,7 @@ export const dailySchedules = pgTable('daily_schedule', {
 		.notNull()
 		.references(() => menus.id, { onDelete: 'cascade' }),
 	availableDate: date('available_date', { mode: 'string' }).notNull(),
+	supply: integer('supply').notNull().default(0),
 	currentStock: integer('current_stock').notNull().default(0),
 	createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull()
 });

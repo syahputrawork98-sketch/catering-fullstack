@@ -3,6 +3,7 @@
   import { signOut } from '@auth/sveltekit/client';
   import { cart } from '$lib/stores/cartStore.svelte';
   import CartDrawer from '$lib/components/CartDrawer.svelte';
+  import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   
   let { children } = $props();
   
@@ -16,7 +17,7 @@
   ];
 </script>
 
-<div class="flex h-screen bg-zinc-50 overflow-hidden">
+<div class="flex h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 overflow-hidden">
   <!-- Sidebar -->
   <aside class="hidden md:flex md:w-64 md:flex-col bg-brand-charcoal text-white">
     <div class="flex flex-col flex-1 min-h-0">
@@ -62,9 +63,9 @@
   <!-- Main Content -->
   <div class="flex flex-col flex-1 overflow-hidden">
     <!-- Header -->
-    <header class="h-20 bg-white border-b border-zinc-200 flex items-center justify-between px-8 relative z-20">
+    <header class="h-20 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-white/5 flex items-center justify-between px-8 relative z-20 transition-colors">
       <div class="flex items-center">
-        <h2 class="text-xl font-bold text-brand-charcoal">
+        <h2 class="text-xl font-bold text-brand-charcoal dark:text-white">
           {#if page.url.pathname === '/dashboard'}
             Ringkasan Dashboard
           {:else if page.url.pathname.includes('/orders')}
@@ -77,28 +78,31 @@
         </h2>
       </div>
 
-      <div class="flex items-center gap-4">
-        <!-- Cart Button -->
-        <button 
-          onclick={() => cart.toggleDrawer()}
-          class="relative w-12 h-12 flex items-center justify-center rounded-2xl bg-zinc-50 border border-zinc-100 text-brand-charcoal hover:bg-brand-primary/10 hover:border-brand-primary/20 hover:text-brand-primary transition-all mr-2"
-        >
-          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 11-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-          {#if cart.totalItems > 0}
-            <span class="absolute -top-1 -right-1 w-5 h-5 bg-brand-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-brand-primary/20 animate-in zoom-in">
-              {cart.totalItems}
-            </span>
-          {/if}
-        </button>
+      <div class="flex items-center gap-6">
+        <ThemeToggle />
+        <div class="flex items-center gap-4">
+          <!-- Cart Button -->
+          <button 
+            onclick={() => cart.toggleDrawer()}
+            class="relative w-12 h-12 flex items-center justify-center rounded-2xl bg-zinc-50 dark:bg-white/10 border border-zinc-100 dark:border-white/10 text-brand-charcoal dark:text-white hover:bg-brand-primary/10 hover:border-brand-primary/20 hover:text-brand-primary transition-all mr-2"
+          >
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 118 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            {#if cart.totalItems > 0}
+              <span class="absolute -top-1 -right-1 w-5 h-5 bg-brand-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg shadow-brand-primary/20 animate-in zoom-in">
+                {cart.totalItems}
+              </span>
+            {/if}
+          </button>
 
-        <div class="text-right hidden sm:block">
-          <p class="text-sm font-bold text-brand-charcoal">{user?.name || 'User'}</p>
-          <p class="text-xs text-zinc-500 capitalize">{user?.role?.toLowerCase() || 'Personal'}</p>
-        </div>
-        <div class="w-10 h-10 bg-brand-primary/10 rounded-full flex items-center justify-center text-brand-primary font-bold border border-brand-primary/20">
-          {user?.name?.charAt(0) || 'U'}
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-bold text-brand-charcoal dark:text-white">{user?.name || 'User'}</p>
+            <p class="text-xs text-zinc-500 capitalize">{user?.role?.toLowerCase() || 'Personal'}</p>
+          </div>
+          <div class="w-10 h-10 bg-brand-primary/10 rounded-full flex items-center justify-center text-brand-primary font-bold border border-brand-primary/20">
+            {user?.name?.charAt(0) || 'U'}
+          </div>
         </div>
       </div>
     </header>

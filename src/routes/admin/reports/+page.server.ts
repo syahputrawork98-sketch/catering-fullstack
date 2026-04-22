@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
-import { orders, expenses } from '$lib/server/db/schema';
-import { sql, desc, inArray } from 'drizzle-orm';
+import { users, orders, expenses } from '$lib/server/db/schema';
+import { sql, desc, eq, inArray } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

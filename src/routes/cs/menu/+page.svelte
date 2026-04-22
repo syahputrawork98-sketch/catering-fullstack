@@ -35,6 +35,7 @@
   let selectedMenu = $state<Menu | null>(null);
 
   let isDeleting = $state<string | null>(null);
+  let isEditing = $state(false);
 
   // Derived filtered menus
   let filteredMenus = $derived(
@@ -195,93 +196,198 @@
     {/if}
   </main>
 
-  <!-- Detail Drawer -->
+  <!-- Gourmet Modal (Detail & Edit) -->
   {#if selectedMenu}
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- Backdrop Overlay -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div 
-      class="fixed inset-0 bg-brand-charcoal/60 backdrop-blur-sm z-[100]" 
-      onclick={() => selectedMenu = null}
-      onkeydown={(e) => e.key === 'Escape' && (selectedMenu = null)}
-      role="button"
-      tabindex="-1"
-      aria-label="Tutup Detail"
+      class="fixed inset-0 bg-brand-charcoal/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" 
+      onclick={() => { if(!isEditing) selectedMenu = null }}
       transition:fade
-    ></div>
-
-
-    
-    <div 
-      class="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white z-[101] shadow-2xl flex flex-col"
-      transition:fly={{ x: 600, duration: 500, opacity: 1 }}
     >
-      <div class="relative h-96 overflow-hidden flex items-center justify-center bg-zinc-100">
-        <img 
-          src={selectedMenu.image} 
-          alt={selectedMenu.name} 
-          class="w-full h-full object-cover" 
-          onerror={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/placeholder-menu.jpg' }}
-        />
-
-
+      <!-- Modal Container -->
+      <div 
+        class="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
+        onclick={(e) => e.stopPropagation()}
+        transition:fly={{ y: 50, duration: 500 }}
+      >
+        <!-- Close Button -->
         <button 
-          onclick={() => selectedMenu = null}
-          class="absolute top-8 right-8 w-12 h-12 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 hover:bg-black/40 transition-all"
-          aria-label="Tutup"
+          onclick={() => { selectedMenu = null; isEditing = false; }}
+          class="absolute top-6 right-6 w-10 h-10 bg-zinc-100 hover:bg-brand-primary hover:text-white rounded-full flex items-center justify-center transition-all z-20"
         >
-          <X size={24} />
+          <X size={20} />
         </button>
 
-      </div>
-
-      <div class="p-12 flex-1 overflow-y-auto scrollbar-none">
-        <div class="flex gap-3 mb-8">
-            <span class="px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-xl text-xs font-black uppercase tracking-widest">{selectedMenu.type?.name}</span>
-            <span class="px-4 py-2 bg-zinc-100 text-zinc-500 rounded-xl text-xs font-black uppercase tracking-widest">{selectedMenu.category?.name}</span>
+        <!-- Left: Visual Side -->
+        <div class="w-full md:w-5/12 h-64 md:h-auto relative bg-zinc-100">
+          <img 
+            src={selectedMenu.image} 
+            alt={selectedMenu.name} 
+            class="w-full h-full object-cover" 
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent md:hidden"></div>
         </div>
 
-        <h2 class="text-5xl font-black text-brand-charcoal mb-6 leading-tight uppercase tracking-tighter">{selectedMenu.name}</h2>
-        
-        <div class="grid grid-cols-2 gap-8 mb-12">
-            <div class="p-6 bg-zinc-50 rounded-[2rem]">
-                <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Harga Dasar</p>
-                <p class="text-3xl font-black text-brand-primary italic">{formatPrice(selectedMenu.basePrice)}</p>
-            </div>
-            <div class="p-6 bg-zinc-50 rounded-[2rem]">
-                <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Terdaftar Sejak</p>
-                <p class="text-xl font-black text-brand-charcoal">{new Date(selectedMenu.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-            </div>
-        </div>
+        <!-- Right: Content Side -->
+        <div class="w-full md:w-7/12 p-8 md:p-12 overflow-y-auto scrollbar-none flex flex-col">
+          
+          {#if !isEditing}
+            <!-- VIEW MODE -->
+            <div in:fade={{ duration: 300 }}>
+              <div class="flex gap-2 mb-6">
+                <span class="px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-xl text-[10px] font-black uppercase tracking-widest">{selectedMenu.type?.name}</span>
+                <span class="px-4 py-2 bg-zinc-100 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest">{selectedMenu.category?.name}</span>
+              </div>
 
-        <div class="space-y-6">
-            <div>
-                <h4 class="flex items-center gap-2 text-xs font-black text-brand-charcoal uppercase mb-4 tracking-widest">
-                    <Info size={16} class="text-brand-primary" /> Deskripsi Hidangan
-                </h4>
-                <p class="text-zinc-500 leading-relaxed font-medium text-lg">
-                    {selectedMenu.description || 'Saat ini belum ada deskripsi lengkap untuk menu ini. Deskripsi membantu pelanggan memahami bahan dan rasa hidangan.'}
-                </p>
-            </div>
+              <h2 class="text-4xl md:text-5xl font-black text-brand-charcoal mb-4 leading-tight uppercase tracking-tighter">{selectedMenu.name}</h2>
+              <p class="text-2xl font-black text-brand-primary italic mb-8">{formatPrice(selectedMenu.basePrice)}</p>
 
-            <div class="pt-8 border-t border-zinc-100">
-                <h4 class="flex items-center gap-2 text-xs font-black text-brand-charcoal uppercase mb-4 tracking-widest">
-                    <Calendar size={16} class="text-brand-primary" /> Statistik Menu
-                </h4>
-                <div class="space-y-4">
-                    <div class="flex justify-between items-center px-6 py-4 bg-zinc-50 rounded-2xl font-bold text-zinc-600">
-                        <span>Frekuensi Pesanan</span>
-                        <span class="text-brand-charcoal">Coming Soon</span>
-                    </div>
+              <div class="space-y-8">
+                <div>
+                  <h4 class="flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase mb-3 tracking-widest">
+                    <Info size={14} /> Deskripsi Menu
+                  </h4>
+                  <p class="text-zinc-500 leading-relaxed font-medium text-lg">
+                    {selectedMenu.description || 'Belum ada deskripsi untuk menu ini.'}
+                  </p>
                 </div>
-            </div>
-        </div>
-      </div>
 
-      <div class="p-12 bg-zinc-50 flex gap-4">
-        <button class="flex-1 py-6 bg-brand-charcoal text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-brand-charcoal/20 hover:scale-[1.02] active:scale-95 transition-all">Edit Menu</button>
-        <button class="flex-1 py-6 bg-white border border-zinc-200 text-zinc-500 rounded-[2rem] font-black uppercase tracking-widest hover:border-brand-primary transition-all">Lihat Jadwal</button>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-6 bg-zinc-50 rounded-3xl border border-zinc-100">
+                    <p class="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 text-center">Dibuat Pada</p>
+                    <p class="text-xs font-bold text-brand-charcoal text-center">{new Date(selectedMenu.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                  <div class="p-6 bg-zinc-50 rounded-3xl border border-zinc-100">
+                    <p class="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 text-center">ID Menu</p>
+                    <p class="text-[10px] font-mono font-bold text-zinc-400 text-center truncate">{selectedMenu.id}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-12 flex gap-4">
+                <button 
+                  onclick={() => isEditing = true}
+                  class="flex-1 py-5 bg-brand-charcoal text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-brand-charcoal/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  Edit Menu
+                </button>
+                <button class="px-8 py-5 bg-zinc-100 text-zinc-500 rounded-2xl font-black uppercase tracking-widest hover:bg-zinc-200 transition-all">
+                  <Calendar size={20} />
+                </button>
+              </div>
+            </div>
+          {:else}
+            <!-- EDIT MODE -->
+            <form 
+              method="POST" 
+              action="?/updateMenu" 
+              use:enhance={() => {
+                return async ({ result, update }) => {
+                  if (result.type === 'success') {
+                    isEditing = false;
+                    selectedMenu = null;
+                    await update();
+                  }
+                };
+              }}
+              class="flex-1 flex flex-col"
+              in:fade={{ duration: 300 }}
+            >
+              <input type="hidden" name="id" value={selectedMenu.id} />
+              
+              <h3 class="text-2xl font-black text-brand-charcoal mb-8 uppercase tracking-tight border-l-4 border-brand-primary pl-4">Edit Detail Hidangan</h3>
+              
+              <div class="space-y-6 flex-1">
+                <!-- Name -->
+                <div class="space-y-2">
+                  <label for="edit-name" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Nama Masakan</label>
+                  <input 
+                    id="edit-name"
+                    name="name" 
+                    type="text" 
+                    value={selectedMenu.name}
+                    class="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal"
+                    required
+                  />
+                </div>
+
+                <!-- Price -->
+                <div class="space-y-2">
+                  <label for="edit-price" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Harga Dasar (Rp)</label>
+                  <input 
+                    id="edit-price"
+                    name="basePrice" 
+                    type="number" 
+                    value={selectedMenu.basePrice}
+                    class="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal"
+                    required
+                  />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Type Selection -->
+                  <div class="space-y-2">
+                    <label for="edit-type" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Tipe</label>
+                    <select 
+                      id="edit-type"
+                      name="typeId" 
+                      class="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal appearance-none"
+                    >
+                      <option value="">Pilih Tipe</option>
+                      {#each data.types as type}
+                        <option value={type.id} selected={selectedMenu.typeId === type.id}>{type.name}</option>
+                      {/each}
+                    </select>
+                  </div>
+
+                  <!-- Category Selection -->
+                  <div class="space-y-2">
+                    <label for="edit-category" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Kategori</label>
+                    <select 
+                      id="edit-category"
+                      name="categoryId" 
+                      class="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal appearance-none"
+                    >
+                      <option value="">Pilih Kategori</option>
+                      {#each data.categories as cat}
+                        <option value={cat.id} selected={selectedMenu.categoryId === cat.id}>{cat.name}</option>
+                      {/each}
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div class="space-y-2">
+                  <label for="edit-description" class="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Deskripsi</label>
+                  <textarea 
+                    id="edit-description"
+                    name="description" 
+                    rows="3"
+                    class="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal resize-none"
+                  >{selectedMenu.description || ''}</textarea>
+                </div>
+              </div>
+
+              <div class="mt-8 flex gap-4">
+                <button 
+                  type="submit"
+                  class="flex-1 py-5 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  Simpan Perubahan
+                </button>
+                <button 
+                  type="button"
+                  onclick={() => isEditing = false}
+                  class="px-8 py-5 bg-zinc-100 text-zinc-500 rounded-2xl font-black uppercase tracking-widest hover:bg-zinc-200 transition-all"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          {/if}
+        </div>
       </div>
     </div>
   {/if}

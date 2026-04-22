@@ -1,7 +1,8 @@
+/// <reference types="node" />
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './src/lib/server/db/schema';
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 
 // Configuration - Manually read from .env or use defaults
 const DATABASE_URL = "postgres://catering_user:catering_password@localhost:5432/catering_hub";
@@ -9,16 +10,19 @@ const client = postgres(DATABASE_URL);
 const db = drizzle(client, { schema });
 
 async function seed() {
+    console.log('--- SEED FUNCTION STARTED ---');
     console.log('🚀 Starting Master Seeding (Clean Slate)...');
 
     // 0. Clear Existing Data (Inverse Order of Dependencies)
     console.log('🧹 Clearing old data...');
-    await db.delete(schema.orderItems);
-    await db.delete(schema.orders);
-    await db.delete(schema.dailySchedules);
-    await db.delete(schema.expenses);
-    await db.delete(schema.menus);
-    await db.delete(schema.users);
+    console.log(' - Clearing orderItems...'); await db.delete(schema.orderItems);
+    console.log(' - Clearing orders...'); await db.delete(schema.orders);
+    console.log(' - Clearing dailySchedules...'); await db.delete(schema.dailySchedules);
+    console.log(' - Clearing expenses...'); await db.delete(schema.expenses);
+    console.log(' - Clearing menus...'); await db.delete(schema.menus);
+    console.log(' - Clearing menuCategories...'); await db.delete(schema.menuCategories);
+    console.log(' - Clearing menuTypes...'); await db.delete(schema.menuTypes);
+    console.log(' - Clearing users...'); await db.delete(schema.users);
     console.log('✨ Database cleared.');
 
     // 1. Seed Users
@@ -84,20 +88,65 @@ async function seed() {
 
     const allUserIds = mockUsers.map(u => u.id);
 
-    // 2. Seed Menus
+    // 2. Seed Classification Tables
+    console.log('📑 Seeding Menu Classifications...');
+    const [dailyType] = await db.insert(schema.menuTypes).values({ name: 'Menu Daily', slug: 'daily' }).returning();
+    const [paketType] = await db.insert(schema.menuTypes).values({ name: 'Menu Paket', slug: 'paket' }).returning();
+    const [nasiKotakCat] = await db.insert(schema.menuCategories).values({ name: 'Nasi Kotak', slug: 'nasi-kotak' }).returning();
+    const [buffetCat] = await db.insert(schema.menuCategories).values({ name: 'Prasmanan', slug: 'prasmanan' }).returning();
+
+    // 3. Seed Menus
     console.log('🍱 Seeding Menus...');
     const menus = [
-        { id: crypto.randomUUID(), name: 'Nasi Liwet Special', description: 'Nasi liwet dengan ayam goreng dan sambal terasi', basePrice: '35000', category: 'DAILY' as const },
-        { id: crypto.randomUUID(), name: 'Beef Wellington Gourmet', description: 'Daging sapi premium dibalut pastry renyah', basePrice: '150000', category: 'PAKET' as const },
-        { id: crypto.randomUUID(), name: 'Salmon Glazed Mustard', description: 'Salmon panggang dengan saus mustard madu', basePrice: '95000', category: 'DAILY' as const },
-        { id: crypto.randomUUID(), name: 'Paket Buffet Corporate', description: 'Menu prasmanan mewah untuk acara kantor', basePrice: '5000000', category: 'PAKET' as const }
+        { 
+            id: crypto.randomUUID(), 
+            name: 'Nasi Liwet Special Gourmet', 
+            description: 'Nasi gurih khas Sunda dengan ayam goreng lengkuas, tahu, tempe, dan sambal terasi dadak.', 
+            image: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?q=80&w=800&auto=format&fit=crop',
+            basePrice: '45000', 
+            typeId: dailyType.id, 
+            categoryId: nasiKotakCat.id 
+        },
+        { 
+            id: crypto.randomUUID(), 
+            name: 'Beef Wellington Royal', 
+            description: 'Daging sapi tenderloin premium yang dibalut dengan mushroom duxelles dan puff pastry renyah.', 
+            image: 'https://images.unsplash.com/photo-151451687d520-17008039da4a?q=80&w=800&auto=format&fit=crop',
+            basePrice: '185000', 
+            typeId: paketType.id, 
+            categoryId: buffetCat.id 
+        },
+        { 
+            id: crypto.randomUUID(), 
+            name: 'Grilled Salmon Glazed', 
+            description: 'Salmon Atlantik panggang dengan saus madu mustard, disajikan dengan asparagus segar.', 
+            image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop',
+            basePrice: '125000', 
+            typeId: dailyType.id, 
+            categoryId: nasiKotakCat.id 
+        },
+        { 
+            id: crypto.randomUUID(), 
+            name: 'Corporate Buffet Package', 
+            description: 'Paket lengkap prasmanan untuk acara kantor, mencakup menu pembuka, utama, hingga penutup.', 
+            image: 'https://images.unsplash.com/photo-1555244162-803834f70033?q=80&w=800&auto=format&fit=crop',
+            basePrice: '7500000', 
+            typeId: paketType.id, 
+            categoryId: buffetCat.id 
+        }
     ];
 
     for (const m of menus) {
-        await db.insert(schema.menus).values(m).onConflictDoNothing();
+        try {
+            await db.insert(schema.menus).values(m).onConflictDoNothing();
+        } catch (err) {
+            console.error(`❌ Failed to insert menu: ${m.name}`);
+            console.error(err);
+            if (typeof process !== 'undefined') process.exit(1);
+        }
     }
 
-    // 3. Seed Schedules (Next 7 days & Last 7 days)
+    // 4. Seed Schedules (Next 7 days & Last 7 days)
     console.log('📅 Seeding Daily Schedules...');
     const today = new Date();
     for (let i = -7; i <= 7; i++) {
@@ -107,7 +156,8 @@ async function seed() {
 
         // Assign random menu to each date
         const randomMenu = menus[Math.floor(Math.random() * menus.length)];
-        if (randomMenu.category === 'DAILY') {
+        // Use the typeId to check if it's a 'Daily' menu
+        if (randomMenu.typeId === dailyType.id) {
             await db.insert(schema.dailySchedules).values({
                 menuId: randomMenu.id,
                 availableDate: dateStr,
@@ -116,7 +166,7 @@ async function seed() {
         }
     }
 
-    // 4. Seed Expenses (Operational)
+    // 5. Seed Expenses (Operational)
     console.log('💸 Seeding Expenses...');
     const expenseCategories = ['BELANJA', 'LOGISTIK', 'GAJI', 'PROMOSI'];
     for (let i = 0; i < 15; i++) {
@@ -131,7 +181,7 @@ async function seed() {
         });
     }
 
-    // 5. Seed Orders (Historical)
+    // 6. Seed Orders (Historical)
     console.log('🛒 Seeding Orders...');
     const statuses = ['PENDING', 'PAID', 'SHIPPED', 'COMPLETED', 'CANCELLED'] as const;
     for (let i = 0; i < 40; i++) {
@@ -166,12 +216,11 @@ async function seed() {
     }
 
     console.log('✅ Seeding Completed Successfully!');
-    process.exit(0);
+    if (typeof process !== 'undefined') process.exit(0);
 }
 
 
 seed().catch(err => {
     console.error('❌ Seeding Failed:', err);
-    process.exit(1);
+    if (typeof process !== 'undefined') process.exit(1);
 });
-

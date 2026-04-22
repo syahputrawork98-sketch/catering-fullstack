@@ -34,7 +34,7 @@ export const actions = {
 				phone,
 				password: hashedPassword,
 				category,
-				instansiName: category === 'INSTANSI' ? instansiName : null,
+				instansiName: (category === 'INSTANSI_BISNIS' || category === 'INSTANSI_PEGAWAI') ? instansiName : null,
 				status,
 				role: 'USER'
 			});

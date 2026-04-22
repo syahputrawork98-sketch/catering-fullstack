@@ -37,6 +37,10 @@
 	let stats = $derived({
 		total: data.orders.length,
 		pending: data.orders.filter((o: any) => o.status === 'PENDING').length,
+		paid: data.orders.filter((o: any) => o.status === 'PAID').length,
+		shipped: data.orders.filter((o: any) => o.status === 'SHIPPED').length,
+		completed: data.orders.filter((o: any) => o.status === 'COMPLETED').length,
+		cancelled: data.orders.filter((o: any) => o.status === 'CANCELLED').length,
 		today: data.orders.filter((o: any) => o.deliveryDate === todayStr).length
 	});
 
@@ -52,29 +56,17 @@
 		</div>
 
 		<div class="flex items-center gap-4">
-			<div class="relative w-full md:w-64">
+			<div class="relative w-full md:w-80 group">
 				<input 
 					type="text" 
 					bind:value={searchQuery}
-					placeholder="Cari ID atau Nama..."
-					class="w-full pl-10 pr-4 py-2.5 bg-white border border-zinc-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/20 shadow-sm"
+					placeholder="Cari ID atau Nama Pelanggan..."
+					class="w-full pl-12 pr-4 py-3.5 bg-white border border-zinc-100 rounded-[1.25rem] text-sm focus:outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary transition-all shadow-sm font-medium"
 				/>
-				<svg class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-brand-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 				</svg>
 			</div>
-			
-			<select 
-				bind:value={selectedStatus}
-				class="bg-white border border-zinc-100 rounded-xl px-4 py-2.5 text-xs font-bold text-brand-charcoal focus:outline-none focus:ring-2 focus:ring-brand-primary/20 shadow-sm"
-			>
-				<option value="ALL">Semua Status</option>
-				<option value="PENDING">Pending</option>
-				<option value="PAID">Dibayar</option>
-				<option value="SHIPPED">Dikirim</option>
-				<option value="COMPLETED">Selesai</option>
-				<option value="CANCELLED">Dibatalkan</option>
-			</select>
 		</div>
 	</div>
 
@@ -99,6 +91,57 @@
 		</div>
 	</div>
 
+	<!-- Order Tabs -->
+	<div class="flex items-center gap-2 mb-8 overflow-x-auto pb-4 scrollbar-none">
+		<button 
+			onclick={() => selectedStatus = 'ALL'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'ALL' ? 'bg-brand-charcoal text-white shadow-xl shadow-brand-charcoal/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Semua Pesanan
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'ALL' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.total}</span>
+		</button>
+		
+		<button 
+			onclick={() => selectedStatus = 'PENDING'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'PENDING' ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Pesanan Masuk
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'PENDING' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.pending}</span>
+		</button>
+
+		<button 
+			onclick={() => selectedStatus = 'PAID'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'PAID' ? 'bg-green-600 text-white shadow-xl shadow-green-600/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Sudah Bayar
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'PAID' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.paid}</span>
+		</button>
+
+		<button 
+			onclick={() => selectedStatus = 'SHIPPED'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'SHIPPED' ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Sedang Kirim
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'SHIPPED' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.shipped}</span>
+		</button>
+
+		<button 
+			onclick={() => selectedStatus = 'COMPLETED'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'COMPLETED' ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Selesai
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'COMPLETED' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.completed}</span>
+		</button>
+
+		<button 
+			onclick={() => selectedStatus = 'CANCELLED'}
+			class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-3 {selectedStatus === 'CANCELLED' ? 'bg-zinc-400 text-white shadow-xl shadow-zinc-400/20' : 'bg-white text-zinc-400 hover:bg-zinc-100 border border-zinc-100'}"
+		>
+			Dibatalkan
+			<span class="px-2 py-0.5 rounded-lg text-[9px] {selectedStatus === 'CANCELLED' ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-500'}">{stats.cancelled}</span>
+		</button>
+	</div>
+
 	<!-- Order Table -->
 	<div class="bg-white rounded-3xl border border-zinc-100 shadow-sm overflow-hidden">
 		<div class="overflow-x-auto">
@@ -110,6 +153,7 @@
 						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Tanggal Kirim</th>
 						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Item</th>
 						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Total</th>
+						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Bukti Bayar</th>
 						<th class="px-6 py-4 text-[10px] font-black text-zinc-400 uppercase tracking-tighter text-right">Status</th>
 					</tr>
 				</thead>
@@ -142,6 +186,24 @@
 							<td class="px-6 py-5 font-bold text-sm text-brand-charcoal">
 								{formatPrice(parseFloat(order.grandTotal))}
 							</td>
+							<td class="px-6 py-5">
+								{#if order.paymentProof}
+									<button 
+										onclick={() => window.open(order.paymentProof, '_blank')}
+										class="w-10 h-14 bg-zinc-100 rounded-lg overflow-hidden border border-zinc-200 hover:ring-2 hover:ring-brand-primary transition-all group/proof relative"
+									>
+										<img src={order.paymentProof} alt="Bukti" class="w-full h-full object-cover" />
+										<div class="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover/proof:opacity-100 flex items-center justify-center text-white">
+											<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+											</svg>
+										</div>
+									</button>
+								{:else}
+									<span class="text-[9px] font-bold text-zinc-300 uppercase tracking-widest italic">Belum Ada</span>
+								{/if}
+							</td>
 							<td class="px-6 py-5 text-right">
 								<form 
 									method="POST" 
@@ -167,9 +229,9 @@
 											onchange={(e) => e.currentTarget.form?.requestSubmit()}
 											class="bg-zinc-100 border-none rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-brand-primary/20 cursor-pointer"
 										>
-											<option value="PENDING">Pending</option>
-											<option value="PAID">Dibayar</option>
-											<option value="SHIPPED">Dikirim</option>
+											<option value="PENDING">Pesanan Masuk</option>
+											<option value="PAID">Sudah Bayar</option>
+											<option value="SHIPPED">Sedang Kirim</option>
 											<option value="COMPLETED">Selesai</option>
 											<option value="CANCELLED">Dibatalkan</option>
 										</select>
