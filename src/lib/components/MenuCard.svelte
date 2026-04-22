@@ -18,12 +18,13 @@
 		deliveryDate?: string;
 	}>();
 
-	function formatPrice(val) {
+	function formatPrice(val: number | string) {
+		const parsedVal = typeof val === 'string' ? parseFloat(val) : val;
 		return new Intl.NumberFormat('id-ID', {
 			style: 'currency',
 			currency: 'IDR',
 			minimumFractionDigits: 0
-		}).format(val);
+		}).format(parsedVal);
 	}
 </script>
 

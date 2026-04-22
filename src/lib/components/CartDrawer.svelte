@@ -1,22 +1,27 @@
-<script>
+<script lang="ts">
 	import { cart } from '$lib/stores/cartStore.svelte';
 	import { fade, fly } from 'svelte/transition';
 
-	function formatPrice(val) {
+	function formatPrice(val: number | string) {
+		const price = typeof val === 'string' ? parseFloat(val) : val;
 		return new Intl.NumberFormat('id-ID', {
 			style: 'currency',
 			currency: 'IDR',
 			minimumFractionDigits: 0
-		}).format(val);
+		}).format(price);
 	}
 </script>
 
 {#if cart.isDrawerOpen}
 	<!-- Backdrop -->
 	<div 
+		role="button"
+		tabindex="0"
+		aria-label="Tutup laci keranjang"
 		class="fixed inset-0 bg-brand-charcoal/20 backdrop-blur-sm z-[60]" 
 		transition:fade 
 		onclick={() => cart.toggleDrawer()}
+		onkeydown={(e) => e.key === 'Enter' && cart.toggleDrawer()}
 	></div>
 
 	<!-- Drawer -->
@@ -28,6 +33,8 @@
 		<div class="px-6 py-5 border-b border-zinc-100 flex items-center justify-between">
 			<h2 class="text-xl font-black text-brand-charcoal">Keranjang Saya</h2>
 			<button 
+				type="button"
+				aria-label="Tutup keranjang"
 				onclick={() => cart.toggleDrawer()}
 				class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-zinc-100 text-zinc-400"
 			>
@@ -60,7 +67,9 @@
 								<div class="flex justify-between items-start gap-2">
 									<h3 class="text-sm font-bold text-brand-charcoal line-clamp-2">{item.name}</h3>
 									<button 
-										onclick={() => cart.removeItem(item.id)}
+										type="button"
+										aria-label="Hapus menu dari keranjang"
+										onclick={() => cart.removeItem(item.id, item.deliveryDate)}
 										class="text-zinc-300 hover:text-red-500 transition-colors"
 									>
 										<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,14 +84,18 @@
 									
 									<div class="flex items-center bg-zinc-50 border border-zinc-100 rounded-xl overflow-hidden shadow-sm">
 										<button 
-											onclick={() => cart.updateQuantity(item.id, -1)}
+											type="button"
+											aria-label="Kurangi jumlah porsi"
+											onclick={() => cart.updateQuantity(item.id, item.deliveryDate, -1)}
 											class="w-8 h-8 flex items-center justify-center hover:bg-white text-zinc-500 transition-colors"
 										>
 											-
 										</button>
 										<span class="w-8 text-center text-xs font-bold">{item.quantity}</span>
 										<button 
-											onclick={() => cart.updateQuantity(item.id, 1)}
+											type="button"
+											aria-label="Tambah jumlah porsi"
+											onclick={() => cart.updateQuantity(item.id, item.deliveryDate, 1)}
 											class="w-8 h-8 flex items-center justify-center hover:bg-white text-zinc-500 transition-colors"
 										>
 											+

@@ -66,15 +66,15 @@
                 </svg>
             </div>
             <div>
-                <p class="text-white font-black uppercase text-xs tracking-widest mb-1">Audit Mode: ON</p>
+                <p class="text-white font-black uppercase text-xs tracking-widest mb-1">Security Mode: STRICT (ENFORCED)</p>
                 <p class="text-[10px] text-zinc-500 font-bold leading-relaxed">
-                    Sistem saat ini mengizinkan akses bypass rute `/admin`, `/cs`, dan `/dashboard` tanpa session login aktif untuk mempermudah pengerjaan audit UI.
+                    Sistem saat ini sepenuhnya dijaga oleh RBAC (Role-Based Access Control). Bypass rute telah dinonaktifkan. Seluruh akses divalidasi dengan Auth.js.
                 </p>
             </div>
         </div>
         <div class="mt-6 flex gap-3">
-            <button class="flex-1 py-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all cursor-not-allowed opacity-50">
-                Matikan Audit Mode
+            <button class="flex-1 py-3 bg-brand-primary/10 border border-brand-primary/20 text-brand-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-primary hover:text-white transition-all cursor-not-allowed opacity-50" disabled>
+                Sistem Aman
             </button>
             <button class="flex-1 py-3 bg-white/5 border border-white/10 text-zinc-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-white transition-all">
                 Reset Kebijakan

@@ -6,12 +6,9 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const session = await locals.auth();
-	/*
 	if (!session?.user?.id) {
 		throw error(401, 'Silakan login terlebih dahulu');
 	}
-
-
 
 	try {
         // Fetch orders with related items and menus for the current user

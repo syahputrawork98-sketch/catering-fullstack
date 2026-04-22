@@ -7,6 +7,8 @@
 		<div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
 			<!-- Close Button -->
 			<button 
+				type="button"
+				aria-label="Tutup detail menu"
 				onclick={onClose}
 				class="absolute top-4 right-4 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-colors z-10"
 			>

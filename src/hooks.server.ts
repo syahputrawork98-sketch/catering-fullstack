@@ -1,27 +1,36 @@
-import type { Handle } from '@sveltejs/kit';
+import { handle as authHandle } from './auth';
+import { sequence } from '@sveltejs/kit/hooks';
+import { redirect, type Handle } from '@sveltejs/kit';
 
-/**
- * 🔓 THE GREAT BYPASS (DEV MODE)
- * Disables all Auth.js and RBAC logic to unlock pages for rapid development.
- * Assumes a persistent ADMIN session globally.
- */
-export const handle: Handle = async ({ event, resolve }) => {
-	// 🔒 TOTAL BYPASS: Force a permanent ADMIN session
-	// This disables all Auth.js and RBAC logic for rapid development.
-	(event.locals as any).auth = async () => ({
-		user: {
-			id: '550e8400-e29b-41d4-a716-446655440000',
-			name: 'Gourmet Dev Master',
-			email: 'dev@gourmethub.com',
-			role: 'ADMIN', // Unlock everything (Admin, CS, User)
-			category: 'PUBLIK',
-			status: 'ACTIVE'
-		},
-		expires: new Date(Date.now() + 3600000 * 24).toISOString() // 24 hours
-	});
 
-	// Resolve request without any RBAC or Redirect checks
+const rbacHandle: Handle = async ({ event, resolve }) => {
+	const session = await event.locals.auth();
+	const path = event.url.pathname;
+
+	// 🛡️ RBAC Guard Logic
+	const userRole = (session?.user as any)?.role?.toUpperCase();
+
+	if (path.startsWith('/admin')) {
+		if (!session || userRole !== 'ADMIN') {
+			throw redirect(303, '/cs'); 
+		}
+	}
+
+	if (path.startsWith('/cs')) {
+		if (!session || (userRole !== 'ADMIN' && userRole !== 'CUSTOMER_SERVICE')) {
+			throw redirect(303, '/dashboard');
+		}
+	}
+
+    if (path.startsWith('/dashboard')) {
+        if (!session) {
+            throw redirect(303, '/login');
+        }
+    }
+
 	return resolve(event);
 };
+
+export const handle = sequence(authHandle, rbacHandle);
 
 

@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './src/lib/server/db/schema';
 import crypto from 'crypto';
+import argon2 from 'argon2';
 
 // Configuration - Manually read from .env or use defaults
 const DATABASE_URL = "postgres://catering_user:catering_password@localhost:5432/catering_hub";
@@ -32,12 +33,14 @@ async function seed() {
     const userId1 = crypto.randomUUID();
     const userId2 = crypto.randomUUID();
 
+    const hashedPassword = await argon2.hash('password123');
+
     const mockUsers = [
         {
             id: adminId,
             name: 'Gourmet Admin',
             phone: '081234567890',
-            password: 'password123', 
+            password: hashedPassword, 
             role: 'ADMIN' as const,
             category: 'PUBLIK' as const,
             status: 'ACTIVE' as const
@@ -46,7 +49,7 @@ async function seed() {
             id: csId,
             name: 'CS Sarah',
             phone: '081234567891',
-            password: 'password123',
+            password: hashedPassword,
             role: 'CUSTOMER_SERVICE' as const,
             category: 'PUBLIK' as const,
             status: 'ACTIVE' as const
@@ -55,7 +58,7 @@ async function seed() {
             id: userId1,
             name: 'Budi Santoso',
             phone: '081234567892',
-            password: 'password123',
+            password: hashedPassword,
             role: 'USER' as const,
             category: 'PUBLIK' as const,
             status: 'ACTIVE' as const
@@ -64,7 +67,7 @@ async function seed() {
             id: userId2,
             name: 'Andi (Pegawai RSUD)',
             phone: '081234567893',
-            password: 'password123',
+            password: hashedPassword,
             role: 'USER' as const,
             category: 'INSTANSI_PEGAWAI' as const,
             instansiName: 'RSUD Kota',
@@ -74,7 +77,7 @@ async function seed() {
             id: crypto.randomUUID(),
             name: 'Procurement Pertamina',
             phone: '081234567894',
-            password: 'password123',
+            password: hashedPassword,
             role: 'USER' as const,
             category: 'INSTANSI_BISNIS' as const,
             instansiName: 'PT Pertamina',

@@ -1,7 +1,30 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { signIn } from '@auth/sveltekit/client';
 
 	let loading = $state(false);
+
+	async function quickLogin(role: 'admin' | 'cs' | 'user') {
+		loading = true;
+		const credentials = {
+			admin: { phone: '081234567890', pass: 'password123' },
+			cs: { phone: '081234567891', pass: 'password123' },
+			user: { phone: '081234567892', pass: 'password123' }
+		};
+
+		const { phone, pass } = credentials[role];
+		
+		try {
+			await signIn('credentials', { 
+				phone, 
+				password: pass, 
+				callbackUrl: '/login/callback',
+				redirect: true 
+			});
+		} catch (err) {
+			console.error("Quick login failed:", err);
+			loading = false;
+		}
+	}
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-12 dark:bg-zinc-950 sm:px-6 lg:px-8">
@@ -15,13 +38,8 @@
 				Silakan masuk ke akun katering Anda
 			</p>
 		</div>
-		<form class="mt-8 space-y-6" method="POST" use:enhance={() => {
-			loading = true;
-			return async ({ update }) => {
-				loading = false;
-				update();
-			};
-		}}>
+		<form class="mt-8 space-y-6" method="POST" action="/auth/callback/credentials" onsubmit={() => loading = true}>
+			<input type="hidden" name="redirectTo" value="/login/callback" />
 			<div class="-space-y-px rounded-md shadow-sm">
 				<div class="mb-4">
 					<label for="phone" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Nomor Telepon</label>
@@ -82,5 +100,38 @@
 			Belum punya akun?
 			<a href="/register" class="font-medium text-orange-600 hover:text-orange-500">Daftar sekarang</a>
 		</p>
+
+		<!-- Quick Access Tabs for Testing -->
+		<div class="mt-10 pt-8 border-t border-zinc-100 dark:border-zinc-800">
+			<p class="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-center mb-6">Quick Access (Dev Only)</p>
+			<div class="grid grid-cols-3 gap-3">
+				<button 
+					type="button"
+					onclick={() => quickLogin('admin')}
+					class="flex flex-col items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 hover:border-brand-primary transition-all group"
+				>
+					<div class="w-8 h-8 bg-brand-primary/10 text-brand-primary rounded-lg flex items-center justify-center font-bold text-xs group-hover:bg-brand-primary group-hover:text-white transition-colors">A</div>
+					<span class="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase">Admin</span>
+				</button>
+
+				<button 
+					type="button"
+					onclick={() => quickLogin('cs')}
+					class="flex flex-col items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 hover:border-blue-500 transition-all group"
+				>
+					<div class="w-8 h-8 bg-blue-500/10 text-blue-500 rounded-lg flex items-center justify-center font-bold text-xs group-hover:bg-blue-500 group-hover:text-white transition-colors">CS</div>
+					<span class="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase">CS</span>
+				</button>
+
+				<button 
+					type="button"
+					onclick={() => quickLogin('user')}
+					class="flex flex-col items-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 hover:border-green-500 transition-all group"
+				>
+					<div class="w-8 h-8 bg-green-500/10 text-green-500 rounded-lg flex items-center justify-center font-bold text-xs group-hover:bg-green-500 group-hover:text-white transition-colors">U</div>
+					<span class="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase">User</span>
+				</button>
+			</div>
+		</div>
 	</div>
 </div>

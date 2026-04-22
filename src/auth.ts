@@ -61,19 +61,30 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 	],
 	callbacks: {
 		async jwt({ token, user }) {
+			// Jika ini adalah login pertama (user objek ada)
 			if (user) {
 				token.id = user.id;
-				token.role = (user as any).role;
+				token.role = (user as any).role?.toUpperCase();
 				token.status = (user as any).status;
+			} 
+			// Jika role hilang tapi kita punya ID, coba ambil ulang dari DB (Fallback Safety)
+			else if (token.id && !token.role) {
+				const [dbUser] = await db.select().from(users).where(eq(users.id, token.id as string));
+				if (dbUser) {
+					token.role = dbUser.role.toUpperCase();
+					token.status = dbUser.status;
+				}
 			}
 			return token;
 		},
 		async session({ session, token }) {
 			if (session.user && token) {
-				session.user.id = (token.id as string) || (token.sub as string);
-				// Safety check for role and status
-				if (token.role) (session.user as any).role = token.role;
-				if (token.status) (session.user as any).status = token.status;
+				session.user.id = token.id as string;
+				(session.user as any).role = (token.role as string)?.toUpperCase() || 'USER';
+				(session.user as any).status = token.status as string;
+				
+				// Debug log ke terminal (dan nanti bisa kita cek)
+				console.log(`[SESSION_ACTIVE] User: ${session.user.id}, Role: ${(session.user as any).role}`);
 			}
 			return session;
 		}

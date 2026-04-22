@@ -4,23 +4,19 @@ import { error, fail } from '@sveltejs/kit';
 import { eq, and, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+	export const load: PageServerLoad = async ({ locals }) => {
 	const session = await locals.auth();
-	/*
 	if (!session?.user?.id) {
 		throw error(401, 'Silakan login terlebih dahulu');
 	}
-	*/
 };
 
 export const actions: Actions = {
 	checkout: async ({ request, locals }) => {
 		const session = await locals.auth();
-		/*
 		if (!session?.user?.id) {
 			throw error(401, 'Silakan login terlebih dahulu');
 		}
-		*/
 
 
 		const formData = await request.formData();

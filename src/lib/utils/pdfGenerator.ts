@@ -135,8 +135,7 @@ export function generateThermalReceipt(order: OrderData) {
 		},
 		headStyles: {
 			fontStyle: 'bold',
-			textColor: [40, 40, 40],
-			borderBottom: { width: 0.1, color: [200, 200, 200] }
+			textColor: [40, 40, 40]
 		},
 		columnStyles: {
 			0: { cellWidth: 32 },
