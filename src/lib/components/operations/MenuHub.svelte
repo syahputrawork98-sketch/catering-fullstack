@@ -37,6 +37,7 @@
 
   let isDeleting = $state<string | null>(null);
   let isEditing = $state(false);
+  let isCreating = $state(false);
 
   // Derived filtered menus
   let filteredMenus = $derived(
@@ -80,23 +81,31 @@
           />
         </div>
         
-        <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-none w-full sm:w-auto">
-          <button 
-            onclick={() => selectedType = null}
-            class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap {selectedType === null ? 'bg-brand-charcoal dark:bg-brand-primary text-white shadow-xl' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:bg-zinc-200'}"
-          >
-            Semua
-          </button>
-          {#each data.types as type}
-            <button 
-              onclick={() => selectedType = type.id}
-              class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap {selectedType === type.id ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:bg-zinc-200'}"
-            >
-              {type.name}
-            </button>
-          {/each}
-        </div>
+        <button 
+          onclick={() => isCreating = true}
+          class="w-full sm:w-auto px-8 py-4 bg-brand-charcoal dark:bg-brand-primary text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+        >
+          <ArrowRight class="rotate-[-90deg]" size={16} /> Tambah Menu Baru
+        </button>
       </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="max-w-7xl mx-auto mt-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <button 
+        onclick={() => selectedType = null}
+        class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap {selectedType === null ? 'bg-brand-charcoal dark:bg-brand-primary text-white shadow-xl' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:bg-zinc-200'}"
+      >
+        Semua
+      </button>
+      {#each data.types as type}
+        <button 
+          onclick={() => selectedType = type.id}
+          class="px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap {selectedType === type.id ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20' : 'bg-zinc-100 dark:bg-white/5 text-zinc-500 hover:bg-zinc-200'}"
+        >
+          {type.name}
+        </button>
+      {/each}
     </div>
   </div>
 
@@ -169,10 +178,10 @@
             <div class="p-8">
               <div class="flex gap-2 mb-4">
                 <span class="px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[9px] font-black uppercase tracking-wider">{menu.type?.name}</span>
-                <span class="px-3 py-1 bg-zinc-100 dark:bg-white/5 text-zinc-500 rounded-lg text-[9px] font-black uppercase tracking-wider">{menu.category?.name}</span>
+                <span class="px-3 py-1 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 rounded-lg text-[9px] font-black uppercase tracking-wider">{menu.category?.name}</span>
               </div>
               <h3 class="text-2xl font-black text-brand-charcoal dark:text-white leading-tight mb-2 uppercase tracking-tight">{menu.name}</h3>
-              <p class="text-zinc-400 text-sm font-medium line-clamp-2 mb-6">{menu.description || 'Tidak ada deskripsi.'}</p>
+              <p class="text-zinc-500 dark:text-zinc-400 text-sm font-medium line-clamp-2 mb-6">{menu.description || 'Tidak ada deskripsi.'}</p>
               
               <div class="flex items-center justify-between pt-6 border-t border-zinc-50 dark:border-white/5">
                 <div>
@@ -189,6 +198,83 @@
       </div>
     {/if}
   </main>
+
+  <!-- Create Modal -->
+  {#if isCreating}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div 
+      class="fixed inset-0 bg-brand-charcoal/80 backdrop-blur-md z-[110] flex items-center justify-center p-4 md:p-8" 
+      onclick={() => isCreating = false}
+      transition:fade
+    >
+      <div 
+        class="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden p-10 relative"
+        onclick={(e) => e.stopPropagation()}
+        transition:fly={{ y: 50, duration: 500 }}
+      >
+        <button 
+          onclick={() => isCreating = false}
+          class="absolute top-6 right-6 w-10 h-10 bg-zinc-100 dark:bg-white/10 hover:bg-brand-primary hover:text-white rounded-full flex items-center justify-center transition-all dark:text-white"
+        >
+          <X size={20} />
+        </button>
+
+        <h2 class="text-3xl font-black text-brand-charcoal dark:text-white mb-8 uppercase tracking-tighter border-l-4 border-brand-primary pl-4">Tambah Menu Baru</h2>
+        
+        <form 
+          method="POST" 
+          action="?/createMenu" 
+          use:enhance={() => {
+            return async ({ result, update }) => {
+              if (result.type === 'success') {
+                isCreating = false;
+                await update();
+              }
+            };
+          }}
+          class="space-y-6"
+        >
+          <div class="grid grid-cols-2 gap-6">
+            <div class="col-span-2">
+              <label for="new_name" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">Nama Masakan</label>
+              <input id="new_name" name="name" type="text" placeholder="Contoh: Nasi Goreng Spesial" class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white" required />
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+              <label for="new_type" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">Tipe Menu</label>
+              <select id="new_type" name="typeId" class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white" required>
+                {#each data.types as type}
+                  <option value={type.id}>{type.name}</option>
+                {/each}
+              </select>
+            </div>
+            <div class="col-span-2 sm:col-span-1">
+              <label for="new_category" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">Kategori</label>
+              <select id="new_category" name="categoryId" class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white" required>
+                {#each data.categories as cat}
+                  <option value={cat.id}>{cat.name}</option>
+                {/each}
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label for="new_price" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">Harga Dasar (Rp)</label>
+              <input id="new_price" name="basePrice" type="number" placeholder="25000" class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white" required />
+            </div>
+          </div>
+          <div>
+            <label for="new_desc" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">Deskripsi Singkat</label>
+            <textarea id="new_desc" name="description" rows="3" class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white resize-none" placeholder="Jelaskan keunikan masakan ini..."></textarea>
+          </div>
+          <div>
+            <label for="new_image" class="block text-[10px] font-black text-zinc-400 uppercase mb-2 tracking-widest">URL Gambar (Opsional)</label>
+            <input id="new_image" name="image" type="text" placeholder="https://..." class="w-full px-6 py-4 bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all font-bold text-brand-charcoal dark:text-white" />
+          </div>
+          
+          <button type="submit" class="w-full py-5 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all mt-4">Simpan Menu Baru</button>
+        </form>
+      </div>
+    </div>
+  {/if}
 
   <!-- Gourmet Modal (Detail & Edit) -->
   {#if selectedMenu}
